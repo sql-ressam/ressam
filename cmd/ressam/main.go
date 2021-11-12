@@ -16,6 +16,7 @@ var (
 
 func main() {
 	flag.Parse()
+
 	if *dsn == "" {
 		log.Fatalln("dsn flag required")
 	}
@@ -24,15 +25,18 @@ func main() {
 	if err != nil {
 		log.Fatalln("open connection:", err.Error())
 	}
+
 	if err := conn.Ping(); err != nil {
 		log.Fatalln("ping:", err.Error())
 	}
 
 	s := server.Init(*httpPort, conn)
-	go func() {
+
+	go func(s server.Server) {
 		if err := s.Run(); err != nil {
 			log.Fatalln("can't run server:", err.Error())
 		}
-	}()
+	}(s)
+
 	s.Wait()
 }
