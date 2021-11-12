@@ -73,8 +73,6 @@ func (e Exporter) GetDBInfo(ctx context.Context) (res DBInfo, err error) {
 			tables = append(tables, Table{
 				Name:    tableName,
 				Columns: columns,
-				Keys:    nil,
-				Indexes: nil,
 			})
 		}
 
