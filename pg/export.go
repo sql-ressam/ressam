@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	"sort"
+
+	"github.com/lib/pq"
 )
 
 type Exporter struct {
@@ -17,19 +19,50 @@ func NewExporter(db *sql.DB) Exporter {
 	}
 }
 
-const pgYesValue = "YES"
+const (
+	pgYesValue   = "YES"
+	targetScheme = "public"
+)
 
 func (e Exporter) GetDBInfo(ctx context.Context) (res DBInfo, err error) {
-	rows, err := e.db.QueryContext(ctx, `SELECT table_schema,
+	res.Schemes, err = e.getSchemes(ctx)
+	if err != nil {
+		return res, fmt.Errorf("get schemes: %s", err)
+	}
+
+	schemes := make([]string, len(res.Schemes))
+	for idx := 0; idx < len(res.Schemes); idx++ {
+		schemes[idx] = res.Schemes[idx].Name
+	}
+
+	relationshipsByScheme, err := e.getTablesRelationships(ctx, schemes)
+	if err != nil {
+		return res, fmt.Errorf("get relationships: %s", err)
+	}
+
+	for schemeName, schemeRelationships := range relationshipsByScheme {
+		for _, targetScheme := range res.Schemes {
+			if targetScheme.Name == schemeName {
+				targetScheme.Relationships = schemeRelationships
+			}
+		}
+	}
+
+	return res, nil
+}
+
+func (e Exporter) getSchemes(ctx context.Context) (res []Scheme, err error) {
+	rows, err := e.db.QueryContext(ctx, `
+		SELECT table_schema,
 		   table_name,
 		   column_name,
 		   ordinal_position,
 		   column_default,
 		   is_nullable,
 		   udt_name,
-		   coalesce(character_maximum_length, numeric_precision, datetime_precision, interval_precision) as precision
-	FROM information_schema.columns
-	where table_schema = 'public'`)
+		   coalesce(character_maximum_length, numeric_precision, datetime_precision, interval_precision) AS precision
+		FROM information_schema.columns
+		WHERE table_schema = 'public'`)
 	if err != nil {
 		return res, fmt.Errorf("get information schems: %w", err)
 	}
@@ -76,10 +109,51 @@ func (e Exporter) GetDBInfo(ctx context.Context) (res DBInfo, err error) {
 			})
 		}
 
-		res.Schemes = append(res.Schemes, Scheme{
+		res = append(res, Scheme{
 			Name:   schemeName,
 			Tables: tables,
 		})
+	}
+
+	return res, err
+}
+
+func (e Exporter) getTablesRelationships(ctx context.Context, schemeNames []string) (map[string][]Relationship, error) {
+	stmt, err := e.db.PrepareContext(ctx, `
+		SELECT tc.table_schema, tc.constraint_name, tc.table_name, kcu.column_name,
+			ccu.table_name AS foreign_table_name,
+			ccu.column_name AS foreign_column_name
+		FROM
+			information_schema.table_constraints AS tc
+				JOIN information_schema.key_column_usage AS kcu
+					 ON tc.constraint_name = kcu.constraint_name
+				JOIN information_schema.constraint_column_usage AS ccu
+					 ON ccu.constraint_name = tc.constraint_name
+		WHERE constraint_type = 'FOREIGN KEY' AND tc.table_schema IN($1)
+		ORDER BY 1, 2;`)
+	if err != nil {
+		return nil, fmt.Errorf("get tables relationships prepare: %s", err)
+	}
+
+	rows, err := stmt.Query(pq.Array(schemeNames))
+	if err != nil {
+		return nil, fmt.Errorf("get tables relationships query: %s", err)
+	}
+
+	res := make(map[string][]Relationship, len(schemeNames))
+
+	for rows.Next() {
+		var (
+			rel    Relationship
+			scheme string
+		)
+
+		err = rows.Scan(&scheme, &rel.Name, &rel.From.Table, &rel.From.Column, &rel.To.Table, &rel.To.Column)
+		if err != nil {
+			return nil, fmt.Errorf("while scan tables relationships: %s", err)
+		}
+
+		res[scheme] = append(res[scheme], rel)
 	}
 
 	return res, nil

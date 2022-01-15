@@ -4,6 +4,7 @@ type DBInfo struct {
 	Schemes []Scheme `json:"schemes"`
 }
 
+// Column contains info about a PostgreSQL column.
 type Column struct {
 	Name           string `json:"name"`
 	Type           string `json:"type"`
@@ -14,19 +15,29 @@ type Column struct {
 	Precision    *int    `json:"precision"`
 }
 
-type Key struct {
-	Name string `json:"name"`
-}
-
-type Index struct {
-	Name string `json:"name"`
-}
-
+// Table represents the PostgreSQL table.
 type Table struct {
 	Name    string   `json:"name"`
 	Columns []Column `json:"columns"`
-	Keys    []Key    `json:"keys"`
-	Indexes []Index  `json:"indexes"`
+}
+
+// ColumnInfo represents minimal info about a column.
+type ColumnInfo struct {
+	Table, Column string
+}
+
+// Relationship represents Relationship between tables.
+type Relationship struct {
+	Name string
+	From ColumnInfo
+	To   ColumnInfo
+}
+
+// Scheme is PostgreSQL scheme.
+type Scheme struct {
+	Name          string  `json:"name"`
+	Tables        []Table `json:"tables"`
+	Relationships []Relationship
 }
 
 type ByColumnPosition []Column
@@ -41,9 +52,4 @@ func (c ByColumnPosition) Less(i, j int) bool {
 
 func (c ByColumnPosition) Swap(i, j int) {
 	c[i], c[j] = c[j], c[i]
-}
-
-type Scheme struct {
-	Name   string  `json:"name"`
-	Tables []Table `json:"tables"`
 }
