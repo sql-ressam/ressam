@@ -25,6 +25,10 @@ func TestMain(m *testing.M) {
 		log.Fatalln("open testConn", err.Error())
 	}
 
+	if err := conn.Ping(); err != nil {
+		log.Fatalln("ping:", err.Error())
+	}
+
 	testConn = conn
 
 	m.Run()
@@ -129,6 +133,76 @@ func TestExporter_GetDBInfo(t *testing.T) {
 			if table.Name == "test_default_values" {
 				assert.Equal(t, expect, table)
 				break
+			}
+		}
+	})
+
+	t.Run("check relationships", func(t *testing.T) {
+		info, err := exporter.GetDBInfo(context.Background())
+		assert.Nil(t, err)
+
+		/*
+			public,books_authors_author_id_fkey,books_authors,author_id,authors,id
+			public,books_authors_book_id_fkey,books_authors,book_id,books,id
+			public,books_users_book_id_fkey,books_users,book_id,books,id
+			public,books_users_user_id_fkey,books_users,user_id,users,id
+		*/
+		expect := map[string][]Relationship{
+			"public": {
+				{
+					Name: "books_authors_author_id_fkey",
+					From: ColumnInfo{
+						Table:  "books_authors",
+						Column: "author_id",
+					},
+					To: ColumnInfo{
+						Table:  "authors",
+						Column: "id",
+					},
+				},
+				{
+					Name: "books_authors_book_id_fkey",
+					From: ColumnInfo{
+						Table:  "books_authors",
+						Column: "book_id",
+					},
+					To: ColumnInfo{
+						Table:  "books",
+						Column: "id",
+					},
+				},
+				{
+					Name: "books_users_book_id_fkey",
+					From: ColumnInfo{
+						Table:  "books_users",
+						Column: "book_id",
+					},
+					To: ColumnInfo{
+						Table:  "books",
+						Column: "id",
+					},
+				},
+				{
+					Name: "books_users_user_id_fkey",
+					From: ColumnInfo{
+						Table:  "books_users",
+						Column: "user_id",
+					},
+					To: ColumnInfo{
+						Table:  "users",
+						Column: "id",
+					},
+				},
+			},
+		}
+
+		t.Logf("%#v", info.Schemes[0])
+
+		for expectSchemeName, expectRelationships := range expect {
+			for _, resultScheme := range info.Schemes {
+				if resultScheme.Name == expectSchemeName {
+					assert.Equal(t, expectRelationships, resultScheme.Relationships)
+				}
 			}
 		}
 	})
