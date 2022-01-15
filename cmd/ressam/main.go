@@ -1,42 +1,23 @@
 package main
 
 import (
-	"database/sql"
-	"flag"
 	"log"
+	"os"
 
-	"github.com/sql-ressam/ressam/server"
+	"github.com/urfave/cli/v2"
+
+	// postgres driver
+	_ "github.com/lib/pq"
 )
 
-var (
-	httpPort = flag.String("http", "localhost:5510", "http port")
-	dsn      = flag.String("dsn", "", "data source name, required")
-	driver   = flag.String("driver", "postgres", "database driver")
-)
+var commands []*cli.Command
 
 func main() {
-	flag.Parse()
+	app := cli.NewApp()
+	app.Usage = "show, modify, export database diagram tool"
+	app.Commands = commands
 
-	if *dsn == "" {
-		log.Fatalln("dsn flag required")
+	if err := app.Run(os.Args); err != nil {
+		log.Fatalln("app run:", err.Error())
 	}
-
-	conn, err := sql.Open(*driver, *dsn)
-	if err != nil {
-		log.Fatalln("open connection:", err.Error())
-	}
-
-	if err := conn.Ping(); err != nil {
-		log.Fatalln("ping:", err.Error())
-	}
-
-	s := server.Init(*httpPort, conn)
-
-	go func(s server.Server) {
-		if err := s.Run(); err != nil {
-			log.Fatalln("can't run server:", err.Error())
-		}
-	}(s)
-
-	s.Wait()
 }
