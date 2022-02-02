@@ -13,21 +13,20 @@ type Exporter struct {
 	db *sql.DB
 }
 
-func NewExporter(db *sql.DB) Exporter {
-	return Exporter{
+func NewExporter(db *sql.DB) *Exporter {
+	return &Exporter{
 		db: db,
 	}
 }
 
 const (
-	pgYesValue   = "YES"
-	targetScheme = "public"
+	pgYesValue = "YES"
 )
 
-func (e Exporter) GetDBInfo(ctx context.Context) (res DBInfo, err error) {
+func (e *Exporter) GetDBInfo(ctx context.Context) (res DBInfo, err error) {
 	res.Schemes, err = e.getSchemes(ctx)
 	if err != nil {
-		return res, fmt.Errorf("get schemes: %s", err)
+		return res, fmt.Errorf("get schemes: %w", err)
 	}
 
 	schemes := make([]string, len(res.Schemes))
@@ -37,13 +36,13 @@ func (e Exporter) GetDBInfo(ctx context.Context) (res DBInfo, err error) {
 
 	relationshipsByScheme, err := e.getTablesRelationships(ctx, schemes)
 	if err != nil {
-		return res, fmt.Errorf("get relationships: %s", err)
+		return res, fmt.Errorf("get relationships: %w", err)
 	}
 
 	for schemeName, schemeRelationships := range relationshipsByScheme {
-		for _, targetScheme := range res.Schemes {
-			if targetScheme.Name == schemeName {
-				targetScheme.Relationships = schemeRelationships
+		for idx := range res.Schemes {
+			if res.Schemes[idx].Name == schemeName {
+				res.Schemes[idx].Relationships = schemeRelationships
 			}
 		}
 	}
@@ -51,7 +50,7 @@ func (e Exporter) GetDBInfo(ctx context.Context) (res DBInfo, err error) {
 	return res, nil
 }
 
-func (e Exporter) getSchemes(ctx context.Context) (res []Scheme, err error) {
+func (e *Exporter) getSchemes(ctx context.Context) (res []Scheme, err error) {
 	rows, err := e.db.QueryContext(ctx, `
 		SELECT table_schema,
 		   table_name,
@@ -82,8 +81,12 @@ func (e Exporter) getSchemes(ctx context.Context) (res []Scheme, err error) {
 			col                     Column
 		)
 
-		if err := rows.Scan(&scheme, &table, &col.Name, &col.ColumnPosition, &col.DefaultValue, &nullable, &col.Type,
-			&col.Precision); err != nil {
+		err = rows.Scan(
+			&scheme, &table, &col.Name,
+			&col.ColumnPosition, &col.DefaultValue,
+			&nullable, &col.Type, &col.Precision,
+		)
+		if err != nil {
 			return res, fmt.Errorf("scan: %w", err)
 		}
 
@@ -118,8 +121,8 @@ func (e Exporter) getSchemes(ctx context.Context) (res []Scheme, err error) {
 	return res, err
 }
 
-func (e Exporter) getTablesRelationships(ctx context.Context, schemeNames []string) (map[string][]Relationship, error) {
-	stmt, err := e.db.PrepareContext(ctx, `
+func (e *Exporter) getTablesRelationships(ctx context.Context, schemes []string) (map[string][]Relationship, error) {
+	rows, err := e.db.QueryContext(ctx, `
 		SELECT tc.table_schema, tc.constraint_name, tc.table_name, kcu.column_name,
 			ccu.table_name AS foreign_table_name,
 			ccu.column_name AS foreign_column_name
@@ -129,18 +132,13 @@ func (e Exporter) getTablesRelationships(ctx context.Context, schemeNames []stri
 					 ON tc.constraint_name = kcu.constraint_name
 				JOIN information_schema.constraint_column_usage AS ccu
 					 ON ccu.constraint_name = tc.constraint_name
-		WHERE constraint_type = 'FOREIGN KEY' AND tc.table_schema IN($1)
-		ORDER BY 1, 2;`)
+		WHERE constraint_type = 'FOREIGN KEY' AND tc.table_schema = ANY($1)
+		ORDER BY 1, 2;`, pq.Array(schemes))
 	if err != nil {
-		return nil, fmt.Errorf("get tables relationships prepare: %s", err)
+		return nil, fmt.Errorf("get tables relationships query: %w", err)
 	}
 
-	rows, err := stmt.Query(pq.Array(schemeNames))
-	if err != nil {
-		return nil, fmt.Errorf("get tables relationships query: %s", err)
-	}
-
-	res := make(map[string][]Relationship, len(schemeNames))
+	res := make(map[string][]Relationship, len(schemes))
 
 	for rows.Next() {
 		var (
@@ -150,7 +148,7 @@ func (e Exporter) getTablesRelationships(ctx context.Context, schemeNames []stri
 
 		err = rows.Scan(&scheme, &rel.Name, &rel.From.Table, &rel.From.Column, &rel.To.Table, &rel.To.Column)
 		if err != nil {
-			return nil, fmt.Errorf("while scan tables relationships: %s", err)
+			return nil, fmt.Errorf("while scan tables relationships: %w", err)
 		}
 
 		res[scheme] = append(res[scheme], rel)
