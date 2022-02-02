@@ -17,21 +17,24 @@ var testConn *sql.DB
 func TestMain(m *testing.M) {
 	dsn := os.Getenv("TEST_DB_DSN")
 	if dsn == "" {
-		log.Fatalln("TEST_DB_DSN environment variable is required")
+		log.Println("TEST_DB_DSN environment variable is required")
+		os.Exit(2)
 	}
 
 	conn, err := sql.Open("postgres", dsn)
 	if err != nil {
-		log.Fatalln("open testConn", err.Error())
+		log.Println("open testConn", err.Error())
+		os.Exit(2)
 	}
 
 	if err := conn.Ping(); err != nil {
-		log.Fatalln("ping:", err.Error())
+		log.Println("ping:", err.Error())
+		os.Exit(2)
 	}
 
 	testConn = conn
 
-	m.Run()
+	os.Exit(m.Run())
 }
 
 func TestExporter_GetDBInfo(t *testing.T) {
@@ -39,16 +42,15 @@ func TestExporter_GetDBInfo(t *testing.T) {
 
 	t.Run("fetch database info without errors", func(t *testing.T) {
 		info, err := exporter.GetDBInfo(context.Background())
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 
-		infoMarshal, err := json.MarshalIndent(info, "", "\t")
-		assert.Nil(t, err)
-		t.Logf(string(infoMarshal))
+		_, err = json.MarshalIndent(info, "", "\t")
+		assert.NoError(t, err)
 	})
 
 	t.Run("fetch info about test_default_values", func(t *testing.T) {
 		info, err := exporter.GetDBInfo(context.Background())
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 
 		expect := Table{
 			Name: "test_default_values",
@@ -195,8 +197,6 @@ func TestExporter_GetDBInfo(t *testing.T) {
 				},
 			},
 		}
-
-		t.Logf("%#v", info.Schemes[0])
 
 		for expectSchemeName, expectRelationships := range expect {
 			for _, resultScheme := range info.Schemes {
