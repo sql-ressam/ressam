@@ -1,11 +1,10 @@
 package server
 
 import (
+	"context"
 	"database/sql"
-	"fmt"
+	"net"
 	"net/http"
-	"os"
-	"os/signal"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -20,8 +19,8 @@ type Server struct {
 	mux        *chi.Mux
 }
 
-func New(addr string) Server {
-	return Server{
+func New(addr string) *Server {
+	return &Server{
 		httpServer: &http.Server{
 			Addr:              addr,
 			ReadTimeout:       time.Second * 60,
@@ -34,7 +33,7 @@ func New(addr string) Server {
 	}
 }
 
-func (s Server) InitAPI(conn *sql.DB) {
+func (s *Server) InitAPI(conn *sql.DB) {
 	exp := pg.NewExporter(conn)
 	dbAPI := db.NewAPI(exp)
 
@@ -43,25 +42,34 @@ func (s Server) InitAPI(conn *sql.DB) {
 	s.mux.Post("/api/db/info", dbAPI.DBInfo)
 }
 
-func (s Server) InitClient() {
+func (s *Server) InitClient() {
 	s.mux.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusMovedPermanently)
 	})
 	// todo add client
 }
 
-func (s *Server) Run() error {
+func (s *Server) Run(ctx context.Context) error {
 	s.httpServer.Handler = s.mux
+	s.httpServer.BaseContext = func(_ net.Listener) context.Context {
+		return ctx
+	}
 
-	return s.httpServer.ListenAndServe()
-}
+	errCh := make(chan error, 1)
 
-func (s Server) Wait() error {
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt)
-	sig := <-sigCh
+	go func() {
+		err := s.httpServer.ListenAndServe()
+		errCh <- err
+	}()
 
-	fmt.Println(sig.String())
+	select {
+	case <-ctx.Done():
+		timeout := time.Second * 10
+		stopCtx, cancel := context.WithTimeout(context.Background(), timeout)
+		defer cancel()
 
-	return s.httpServer.Close()
+		return s.httpServer.Shutdown(stopCtx)
+	case err := <-errCh:
+		return err
+	}
 }
