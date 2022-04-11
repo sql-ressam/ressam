@@ -23,21 +23,22 @@ type Table struct {
 
 // ColumnInfo represents minimal info about a column.
 type ColumnInfo struct {
-	Table, Column string
+	Table  string `json:"table"`
+	Column string `json:"column"`
 }
 
 // Relationship represents Relationship between tables.
 type Relationship struct {
-	Name string
-	From ColumnInfo
-	To   ColumnInfo
+	Name string     `json:"name"`
+	From ColumnInfo `json:"from"`
+	To   ColumnInfo `json:"to"`
 }
 
 // Scheme is PostgreSQL scheme.
 type Scheme struct {
-	Name          string  `json:"name"`
-	Tables        []Table `json:"tables"`
-	Relationships []Relationship
+	Name          string         `json:"name"`
+	Tables        []Table        `json:"tables"`
+	Relationships []Relationship `json:"relationships"`
 }
 
 type ByColumnPosition []Column
