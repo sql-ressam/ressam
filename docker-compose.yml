@@ -3,9 +3,9 @@ services:
   postgres:
     image: postgres:13
     environment:
-      - "POSTGRES_DB=api"
-      - "POSTGRES_USER=api-user"
-      - "POSTGRES_PASSWORD=api-password"
+      - "POSTGRES_DB=ressam"
+      - "POSTGRES_USER=postgres"
+      - "POSTGRES_PASSWORD=postgres"
     ports:
       - "5432:5432"
     command: [ "postgres", "-c", "log_statement=all" ]
@@ -19,4 +19,4 @@ services:
       - "5432"
     restart: on-failure
     entrypoint: [ "goose", "-dir=/app/migrations", "postgres",
-                  "postgresql://api-user:api-password@postgres:5432/api?sslmode=disable", "up" ]
+                  "postgresql://postgres:postgres@postgres:5432/ressam?sslmode=disable", "up" ]
