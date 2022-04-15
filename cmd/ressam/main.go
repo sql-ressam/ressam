@@ -5,10 +5,8 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/urfave/cli/v2"
-
-	// postgres driver
 	_ "github.com/lib/pq"
+	"github.com/urfave/cli/v2"
 )
 
 var commands []*cli.Command

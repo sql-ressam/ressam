@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -45,28 +46,32 @@ func New(ctx context.Context, s *Settings) *Server {
 	}
 }
 
+const (
+	dbInfoPath = "/api/db/info"
+)
+
 func (s *Server) InitAPI(ctx context.Context, driver, dsn string) error {
 	s.mux.Use(cors.AllowAll().Handler)
 
 	if s.settings.Debug {
-		s.mux.Post("/api/db/info", db.FakeDBInfo)
+		s.mux.Post(dbInfoPath, db.FakeDBInfo)
 		return nil
 	}
 
-	switch driver {
-	case "postgres": // todo: add aliases
+	switch strings.ToLower(driver) {
+	case "postgres", "postgresql", "pg", "postgre":
 		conn, err := sql.Open("postgres", dsn)
 		if err != nil {
 			return fmt.Errorf("open connection: %w", err)
 		}
 
 		if err := conn.PingContext(ctx); err != nil {
-			return fmt.Errorf("ping: %w", err)
+			return fmt.Errorf("can't ping pg: %w", err)
 		}
 
 		exp := pg.NewExporter(conn)
 		dbAPI := db.NewAPI(exp)
-		s.mux.Post("/api/db/info", dbAPI.DBInfo)
+		s.mux.Post(dbInfoPath, dbAPI.DBInfo)
 	default:
 		return fmt.Errorf("unsupported driver: %v", driver)
 	}
@@ -94,7 +99,6 @@ func (s *Server) Run(ctx context.Context) error {
 	}
 
 	errCh := make(chan error, 1)
-
 	go func() {
 		err := s.httpServer.ListenAndServe()
 		errCh <- err
@@ -102,12 +106,12 @@ func (s *Server) Run(ctx context.Context) error {
 
 	select {
 	case <-ctx.Done():
-		timeout := time.Second * 10
-		stopCtx, cancel := context.WithTimeout(context.Background(), timeout)
-		defer cancel()
-
-		return s.httpServer.Shutdown(stopCtx)
+		// .Shutdown() here is redundant
+		if err := s.httpServer.Close(); err != nil {
+			return fmt.Errorf("can't close http server: %w", err)
+		}
+		return <-errCh
 	case err := <-errCh:
-		return err
+		return fmt.Errorf("can't listen addr: %w", err)
 	}
 }
