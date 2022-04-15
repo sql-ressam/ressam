@@ -1,0 +1,22 @@
+version: '2'
+services:
+  postgres:
+    image: postgres:13
+    environment:
+      - "POSTGRES_DB=api"
+      - "POSTGRES_USER=api-user"
+      - "POSTGRES_PASSWORD=api-password"
+    ports:
+      - "5432:5432"
+    command: [ "postgres", "-c", "log_statement=all" ]
+  goose:
+    image: gomicro/goose
+    depends_on:
+      - postgres
+    volumes:
+      - ./pg/testdata/migrations:/app/migrations
+    expose:
+      - "5432"
+    restart: on-failure
+    entrypoint: [ "goose", "-dir=/app/migrations", "postgres",
+                  "postgresql://api-user:api-password@postgres:5432/api?sslmode=disable", "up" ]
