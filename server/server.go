@@ -79,12 +79,12 @@ func (s *Server) InitClient() {
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 	})
 
-	// use dynamic folder instead of embedded
-	//if s.settings.Debug {
-	//	s.mux.Mount("/", http.FileServer())
-	//} else {
-	s.mux.Mount("/", http.FileServer(http.FS(ressam.GetClientFS())))
-	//}
+	// use os folder instead of embed
+	if s.settings.Debug {
+		s.mux.Mount("/", http.FileServer(http.FS(ressam.GetClientFS())))
+	} else {
+		s.mux.Mount("/", http.FileServer(http.FS(ressam.GetEmbeddedClientFS())))
+	}
 }
 
 func (s *Server) Run(ctx context.Context) error {
