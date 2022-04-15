@@ -1,47 +1,73 @@
 package main
 
 import (
+	"errors"
+	"fmt"
+	"net/http"
+
+	"github.com/skratchdot/open-golang/open"
 	"github.com/urfave/cli/v2"
 
 	"github.com/sql-ressam/ressam/server"
 )
 
 func init() {
-	dsn := &cli.StringFlag{
+	dsnFlag := &cli.StringFlag{
 		Name:     "dsn",
 		EnvVars:  []string{"RESSAM_DSN"},
-		Required: false,
-	}
-	http := &cli.StringFlag{
-		Name:  "http",
-		Value: "127.0.0.1:5555",
-	}
-	driver := &cli.StringFlag{
-		Name:     "driver",
-		Value:    "",
 		Required: true,
 	}
-	debug := &cli.BoolFlag{
+	driverFlag := &cli.StringFlag{
+		Name:     "driver",
+		EnvVars:  []string{"RESSAM_DRIVER"},
+		Required: true,
+		Value:    "", // todo(aleksvdim): try to parse from DSN
+	}
+	httpFlag := &cli.StringFlag{
+		Name:  "http",
+		Value: "127.0.0.1:3939",
+	}
+	debugFlag := &cli.BoolFlag{
 		Name:   "debug",
 		Hidden: true,
 		Value:  false,
 	}
 	commands = append(commands, &cli.Command{
-		Name: "draw",
+		Name:  "draw",
+		Flags: []cli.Flag{dsnFlag, httpFlag, driverFlag, debugFlag},
 		Action: func(c *cli.Context) error {
 			s := server.New(c.Context, &server.Settings{
-				Addr:  c.String(http.Name),
-				Debug: c.Bool(debug.Name),
+				Addr:  c.String(httpFlag.Name),
+				Debug: c.Bool(debugFlag.Name),
 			})
 
-			if err := s.InitAPI(c.Context, c.String(driver.Name), c.String(dsn.Name)); err != nil {
+			if err := s.InitAPI(c.Context, c.String(driverFlag.Name), c.String(dsnFlag.Name)); err != nil {
 				return err
 			}
 
 			s.InitClient()
 
-			return s.Run(c.Context)
+			errCh := make(chan error, 1)
+			go func() {
+				errCh <- s.Run(c.Context)
+			}()
+
+			webAppUrl := fmt.Sprintf("http://%s/", httpFlag.Value)
+			if err := server.WaitStarts(webAppUrl, errCh); err != nil {
+				return err
+			}
+
+			if err := open.Run(webAppUrl); err != nil {
+				return fmt.Errorf("can't open web browser: %w", err)
+			}
+
+			select {
+			case err := <-errCh:
+				if errors.Is(err, http.ErrServerClosed) {
+					return nil
+				}
+				return err
+			}
 		},
-		Flags: []cli.Flag{dsn, http, driver, debug},
 	})
 }
