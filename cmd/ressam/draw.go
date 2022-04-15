@@ -22,12 +22,12 @@ func init() {
 		Required: true,
 	}
 	debug := &cli.BoolFlag{
-		Hidden: true,
 		Name:   "debug",
+		Hidden: true,
 		Value:  false,
 	}
 	commands = append(commands, &cli.Command{
-		Name: "diagram",
+		Name: "draw",
 		Action: func(c *cli.Context) error {
 			s := server.New(c.Context, &server.Settings{
 				Addr:  c.String(http.Name),
