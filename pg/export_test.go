@@ -10,6 +10,8 @@ import (
 
 	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sql-ressam/ressam/internal/pkg/help"
 )
 
 var testConn *sql.DB
@@ -60,8 +62,8 @@ func TestExporter_GetDBInfo(t *testing.T) {
 					Type:           "int8",
 					Nullable:       false,
 					ColumnPosition: 1,
-					DefaultValue:   getStrRef("nextval('test_default_values_id_seq'::regclass)"),
-					Precision:      getIntRef(64),
+					DefaultValue:   help.Ref[string]("nextval('test_default_values_id_seq'::regclass)"),
+					Precision:      help.Ref[int](64),
 				},
 				{
 					Name:           "int_null",
@@ -69,7 +71,7 @@ func TestExporter_GetDBInfo(t *testing.T) {
 					Nullable:       true,
 					ColumnPosition: 2,
 					DefaultValue:   nil,
-					Precision:      getIntRef(32),
+					Precision:      help.Ref[int](32),
 				},
 				{
 					Name:           "int_not_null",
@@ -77,23 +79,23 @@ func TestExporter_GetDBInfo(t *testing.T) {
 					Nullable:       false,
 					ColumnPosition: 3,
 					DefaultValue:   nil,
-					Precision:      getIntRef(32),
+					Precision:      help.Ref[int](32),
 				},
 				{
 					Name:           "int_null_default_1",
 					Type:           "int4",
 					Nullable:       true,
 					ColumnPosition: 4,
-					DefaultValue:   getStrRef("1"),
-					Precision:      getIntRef(32),
+					DefaultValue:   help.Ref[string]("1"),
+					Precision:      help.Ref[int](32),
 				},
 				{
 					Name:           "int_not_null_default_1",
 					Type:           "int4",
 					Nullable:       false,
 					ColumnPosition: 5,
-					DefaultValue:   getStrRef("1"),
-					Precision:      getIntRef(32),
+					DefaultValue:   help.Ref[string]("1"),
+					Precision:      help.Ref[int](32),
 				},
 
 				{
@@ -117,7 +119,7 @@ func TestExporter_GetDBInfo(t *testing.T) {
 					Type:           "test_enum",
 					Nullable:       true,
 					ColumnPosition: 8,
-					DefaultValue:   getStrRef("'first'::test_enum"),
+					DefaultValue:   help.Ref[string]("'first'::test_enum"),
 					Precision:      nil,
 				},
 				{
@@ -125,7 +127,7 @@ func TestExporter_GetDBInfo(t *testing.T) {
 					Type:           "test_enum",
 					Nullable:       false,
 					ColumnPosition: 9,
-					DefaultValue:   getStrRef("'first'::test_enum"),
+					DefaultValue:   help.Ref[string]("'first'::test_enum"),
 					Precision:      nil,
 				},
 			},
@@ -206,12 +208,4 @@ func TestExporter_GetDBInfo(t *testing.T) {
 			}
 		}
 	})
-}
-
-func getStrRef(s string) *string {
-	return &s
-}
-
-func getIntRef(i int) *int {
-	return &i
 }

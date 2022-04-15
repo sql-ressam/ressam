@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/signal"
 
@@ -23,7 +22,6 @@ func main() {
 	defer stop()
 
 	if err := app.RunContext(ctx, os.Args); err != nil {
-		_, _ = fmt.Fprintln(os.Stderr, err.Error())
-		os.Exit(1)
+		panic(err)
 	}
 }
