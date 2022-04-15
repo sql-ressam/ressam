@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -53,8 +54,8 @@ func (s *Server) InitAPI(ctx context.Context, driver, dsn string) error {
 		return nil
 	}
 
-	switch driver {
-	case "postgres": // todo: add aliases
+	switch strings.ToLower(driver) {
+	case "postgres", "postgresql", "pg", "postgre":
 		conn, err := sql.Open("postgres", dsn)
 		if err != nil {
 			return fmt.Errorf("open connection: %w", err)
