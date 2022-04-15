@@ -27,74 +27,93 @@ func (a API) DBInfo(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func FakeDBInfo(w http.ResponseWriter, r *http.Request) {
-	fakeTable := pg.Table{
-		Name: "test_default_values",
-		Columns: []pg.Column{
-			{
-				Name:           "id",
-				Type:           "int8",
-				Nullable:       false,
-				ColumnPosition: 1,
-				DefaultValue:   help.Ref[string]("nextval('test_default_values_id_seq'::regclass)"),
-				Precision:      help.Ref[int](64),
+func FakeDBInfo(w http.ResponseWriter, _ *http.Request) {
+	fakeTables := []pg.Table{
+		{
+			Name: "books_users",
+			Columns: []pg.Column{
+				{
+					Name:      "user_id",
+					Type:      "int8",
+					Precision: help.Ref[int](64),
+				},
+				{
+					Name:      "book_id",
+					Type:      "int8",
+					Precision: help.Ref[int](64),
+				},
+				{
+					Name:         "receiving_date",
+					Type:         "timestamp",
+					DefaultValue: help.Ref[string]("now()"),
+					Precision:    help.Ref[int](6),
+				},
 			},
-			{
-				Name:           "int_null",
-				Type:           "int4",
-				Nullable:       true,
-				ColumnPosition: 2,
-				DefaultValue:   nil,
-				Precision:      help.Ref[int](32),
+		},
+		{
+			Name: "books_authors",
+			Columns: []pg.Column{
+				{
+					Name:      "author_id",
+					Type:      "int8",
+					Precision: help.Ref[int](64),
+				},
+				{
+					Name:      "book_id",
+					Type:      "int8",
+					Precision: help.Ref[int](64),
+				},
 			},
-			{
-				Name:           "int_not_null",
-				Type:           "int4",
-				Nullable:       false,
-				ColumnPosition: 3,
-				DefaultValue:   nil,
-				Precision:      help.Ref[int](32),
+		},
+		{
+			Name: "users",
+			Columns: []pg.Column{
+				{
+					Name:         "id",
+					Type:         "int8",
+					DefaultValue: help.Ref[string]("nextval('users_id_seq'::regclass)"),
+					Precision:    help.Ref[int](64),
+				},
+				{
+					Name:      "name",
+					Type:      "varchar",
+					Nullable:  true,
+					Precision: help.Ref[int](255),
+				},
 			},
-			{
-				Name:           "int_null_default_1",
-				Type:           "int4",
-				Nullable:       true,
-				ColumnPosition: 4,
-				DefaultValue:   help.Ref[string]("1"),
-				Precision:      help.Ref[int](32),
+		},
+		{
+			Name: "books",
+			Columns: []pg.Column{
+				{
+					Name:         "id",
+					Type:         "int8",
+					DefaultValue: help.Ref[string]("nextval('books_id_seq'::regclass)"),
+					Precision:    help.Ref[int](64),
+				},
+				{
+					Name:      "name",
+					Type:      "varchar",
+					Nullable:  true,
+					Precision: help.Ref[int](255),
+				},
 			},
-			{
-				Name:           "int_not_null_default_1",
-				Type:           "int4",
-				Nullable:       false,
-				ColumnPosition: 5,
-				DefaultValue:   help.Ref[string]("1"),
-				Precision:      help.Ref[int](32),
-			},
-
-			{
-				Name:           "test_enum_null",
-				Type:           "test_enum",
-				Nullable:       true,
-				ColumnPosition: 6,
-			},
-			{
-				Name:           "test_enum_not_null",
-				Type:           "test_enum",
-				ColumnPosition: 7,
-			},
-			{
-				Name:           "test_enum_null_default_first",
-				Type:           "test_enum",
-				Nullable:       true,
-				ColumnPosition: 8,
-				DefaultValue:   help.Ref[string]("'first'::test_enum"),
-			},
-			{
-				Name:           "test_enum_not_null_default_first",
-				Type:           "test_enum",
-				ColumnPosition: 9,
-				DefaultValue:   help.Ref[string]("'first'::test_enum"),
+		},
+		{
+			Name: "authors",
+			Columns: []pg.Column{
+				{
+					Name:         "id",
+					Type:         "int8",
+					DefaultValue: help.Ref[string]("nextval('authors_id_seq'::regclass)"),
+					Precision:    help.Ref[int](64),
+				},
+				{
+					Name:      "name",
+					Type:      "varchar",
+					Nullable:  true,
+					Precision: help.Ref[int](255),
+				},
 			},
 		},
 	}
@@ -150,7 +169,7 @@ func FakeDBInfo(w http.ResponseWriter, r *http.Request) {
 		Schemes: []pg.Scheme{
 			{
 				Name:          "public",
-				Tables:        []pg.Table{fakeTable},
+				Tables:        fakeTables,
 				Relationships: rels,
 			},
 		},

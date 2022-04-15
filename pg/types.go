@@ -11,7 +11,7 @@ type Column struct {
 	Nullable       bool   `json:"nullable"`
 	ColumnPosition int32  `json:"-"`
 
-	DefaultValue *string `json:"defaultValue"`
+	DefaultValue *string `json:"omitempty,defaultValue"`
 	Precision    *int    `json:"precision"`
 }
 
