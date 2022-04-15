@@ -1,9 +1,6 @@
 package main
 
 import (
-	"database/sql"
-	"fmt"
-
 	"github.com/urfave/cli/v2"
 
 	"github.com/sql-ressam/ressam/server"
@@ -12,40 +9,39 @@ import (
 func init() {
 	dsn := &cli.StringFlag{
 		Name:     "dsn",
-		Required: true,
 		EnvVars:  []string{"RESSAM_DSN"},
+		Required: false,
 	}
 	http := &cli.StringFlag{
 		Name:  "http",
-		Value: ":5555",
+		Value: "127.0.0.1:5555",
 	}
 	driver := &cli.StringFlag{
 		Name:     "driver",
 		Value:    "",
 		Required: true,
 	}
-	useClient := &cli.BoolFlag{
-		Name:  "use-client",
-		Value: false,
+	debug := &cli.BoolFlag{
+		Hidden: true,
+		Name:   "debug",
+		Value:  false,
 	}
 	commands = append(commands, &cli.Command{
-		Name:  "diagram",
-		Flags: []cli.Flag{dsn, http, driver, useClient},
+		Name: "diagram",
 		Action: func(c *cli.Context) error {
-			conn, err := sql.Open(c.String(driver.Name), c.String(dsn.Name))
-			if err != nil {
-				return fmt.Errorf("open connection: %w", err)
+			s := server.New(c.Context, &server.Settings{
+				Addr:  c.String(http.Name),
+				Debug: c.Bool(debug.Name),
+			})
+
+			if err := s.InitAPI(c.Context, c.String(driver.Name), c.String(dsn.Name)); err != nil {
+				return err
 			}
 
-			if err := conn.PingContext(c.Context); err != nil {
-				return fmt.Errorf("ping: %w", err)
-			}
-
-			s := server.New(c.String(http.Name))
-			s.InitAPI(conn)
 			s.InitClient()
 
 			return s.Run(c.Context)
 		},
+		Flags: []cli.Flag{dsn, http, driver, debug},
 	})
 }
