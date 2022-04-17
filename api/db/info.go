@@ -5,8 +5,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/sql-ressam/ressam/internal/pkg/help"
+	"github.com/sql-ressam/ressam/db"
 	"github.com/sql-ressam/ressam/pg"
+	"github.com/sql-ressam/ressam/pkg/help"
 )
 
 func (a API) DBInfo(w http.ResponseWriter, r *http.Request) {
@@ -28,10 +29,10 @@ func (a API) DBInfo(w http.ResponseWriter, r *http.Request) {
 }
 
 func FakeDBInfo(w http.ResponseWriter, _ *http.Request) {
-	fakeTables := []pg.Table{
+	fakeTables := []db.Table{
 		{
 			Name: "books_users",
-			Columns: []pg.Column{
+			Columns: []db.Column{
 				{
 					Name:      "user_id",
 					Type:      "int8",
@@ -52,7 +53,7 @@ func FakeDBInfo(w http.ResponseWriter, _ *http.Request) {
 		},
 		{
 			Name: "books_authors",
-			Columns: []pg.Column{
+			Columns: []db.Column{
 				{
 					Name:      "author_id",
 					Type:      "int8",
@@ -67,7 +68,7 @@ func FakeDBInfo(w http.ResponseWriter, _ *http.Request) {
 		},
 		{
 			Name: "users",
-			Columns: []pg.Column{
+			Columns: []db.Column{
 				{
 					Name:         "id",
 					Type:         "int8",
@@ -84,7 +85,7 @@ func FakeDBInfo(w http.ResponseWriter, _ *http.Request) {
 		},
 		{
 			Name: "books",
-			Columns: []pg.Column{
+			Columns: []db.Column{
 				{
 					Name:         "id",
 					Type:         "int8",
@@ -101,7 +102,7 @@ func FakeDBInfo(w http.ResponseWriter, _ *http.Request) {
 		},
 		{
 			Name: "authors",
-			Columns: []pg.Column{
+			Columns: []db.Column{
 				{
 					Name:         "id",
 					Type:         "int8",
@@ -118,47 +119,47 @@ func FakeDBInfo(w http.ResponseWriter, _ *http.Request) {
 		},
 	}
 
-	rels := []pg.Relationship{
+	rels := []db.Relationship{
 		{
 			Name: "books_authors_author_id_fkey",
-			From: pg.ColumnInfo{
+			From: db.ColumnInfo{
 				Table:  "books_authors",
 				Column: "author_id",
 			},
-			To: pg.ColumnInfo{
+			To: db.ColumnInfo{
 				Table:  "authors",
 				Column: "id",
 			},
 		},
 		{
 			Name: "books_authors_book_id_fkey",
-			From: pg.ColumnInfo{
+			From: db.ColumnInfo{
 				Table:  "books_authors",
 				Column: "book_id",
 			},
-			To: pg.ColumnInfo{
+			To: db.ColumnInfo{
 				Table:  "books",
 				Column: "id",
 			},
 		},
 		{
 			Name: "books_users_book_id_fkey",
-			From: pg.ColumnInfo{
+			From: db.ColumnInfo{
 				Table:  "books_users",
 				Column: "book_id",
 			},
-			To: pg.ColumnInfo{
+			To: db.ColumnInfo{
 				Table:  "books",
 				Column: "id",
 			},
 		},
 		{
 			Name: "books_users_user_id_fkey",
-			From: pg.ColumnInfo{
+			From: db.ColumnInfo{
 				Table:  "books_users",
 				Column: "user_id",
 			},
-			To: pg.ColumnInfo{
+			To: db.ColumnInfo{
 				Table:  "users",
 				Column: "id",
 			},
