@@ -45,7 +45,7 @@ func TestExporter_GetDBInfo(t *testing.T) {
 	exporter := NewExporter(testConn)
 
 	t.Run("fetch database info without errors", func(t *testing.T) {
-		info, err := exporter.GetDBInfo(context.Background())
+		info, err := exporter.FetchDBInfo(context.Background())
 		assert.NoError(t, err)
 
 		_, err = json.MarshalIndent(info, "", "\t")
@@ -53,7 +53,7 @@ func TestExporter_GetDBInfo(t *testing.T) {
 	})
 
 	t.Run("fetch info about test_default_values", func(t *testing.T) {
-		info, err := exporter.GetDBInfo(context.Background())
+		info, err := exporter.FetchDBInfo(context.Background())
 		assert.NoError(t, err)
 
 		expect := db.Table{
@@ -146,7 +146,7 @@ func TestExporter_GetDBInfo(t *testing.T) {
 	})
 
 	t.Run("check relationships", func(t *testing.T) {
-		info, err := exporter.GetDBInfo(context.Background())
+		info, err := exporter.FetchDBInfo(context.Background())
 		assert.Nil(t, err)
 
 		/*

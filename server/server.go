@@ -17,17 +17,20 @@ import (
 	"github.com/sql-ressam/ressam/pg"
 )
 
+// Settings contains server options.
 type Settings struct {
 	Addr  string
 	Debug bool
 }
 
+// Server accepts HTTP requests.
 type Server struct {
 	httpServer *http.Server
 	mux        *chi.Mux
 	settings   *Settings
 }
 
+// New returns new Server instance.
 func New(ctx context.Context, s *Settings) *Server {
 	return &Server{
 		httpServer: &http.Server{
@@ -50,6 +53,7 @@ const (
 	dbInfoPath = "/api/db/info"
 )
 
+// InitAPI inits http API.
 func (s *Server) InitAPI(ctx context.Context, driver, dsn string) error {
 	s.mux.Use(cors.AllowAll().Handler)
 
@@ -79,6 +83,7 @@ func (s *Server) InitAPI(ctx context.Context, driver, dsn string) error {
 	return nil
 }
 
+// InitClient inits embedded web client.
 func (s *Server) InitClient() {
 	s.mux.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
@@ -92,6 +97,7 @@ func (s *Server) InitClient() {
 	}
 }
 
+// Run the server until the context is canceled.
 func (s *Server) Run(ctx context.Context) error {
 	s.httpServer.Handler = s.mux
 	s.httpServer.BaseContext = func(_ net.Listener) context.Context {

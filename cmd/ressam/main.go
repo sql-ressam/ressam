@@ -9,12 +9,12 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var commands []*cli.Command
-
 func main() {
 	app := cli.NewApp()
 	app.Usage = "show, modify, export database diagram tool"
-	app.Commands = commands
+	app.Commands = []*cli.Command{
+		drawCommand(),
+	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()

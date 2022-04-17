@@ -31,16 +31,20 @@ type Relationship struct {
 	To   ColumnInfo `json:"to"`
 }
 
+// ByColumnPosition implement sort.Interface for sorting columns by position.
 type ByColumnPosition []Column
 
+// Len returns the slice len.
 func (c ByColumnPosition) Len() int {
 	return len(c)
 }
 
+// Less compares i, j items.
 func (c ByColumnPosition) Less(i, j int) bool {
 	return c[i].ColumnPosition < c[j].ColumnPosition
 }
 
+// Swap i, j items.
 func (c ByColumnPosition) Swap(i, j int) {
 	c[i], c[j] = c[j], c[i]
 }

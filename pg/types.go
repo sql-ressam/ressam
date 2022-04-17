@@ -4,8 +4,8 @@ import (
 	"github.com/sql-ressam/ressam/db"
 )
 
-// DBInfo is complete information about DBMS.
-type DBInfo struct {
+// Info is complete information about DBMS.
+type Info struct {
 	Schemes []Scheme `json:"schemes"`
 }
 

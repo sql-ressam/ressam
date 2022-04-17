@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/skratchdot/open-golang/open"
 	"github.com/urfave/cli/v2"
@@ -11,7 +12,7 @@ import (
 	"github.com/sql-ressam/ressam/server"
 )
 
-func init() {
+func drawCommand() *cli.Command {
 	dsnFlag := &cli.StringFlag{
 		Name:     "dsn",
 		EnvVars:  []string{"RESSAM_DSN"},
@@ -23,16 +24,16 @@ func init() {
 		Required: true,
 		Value:    "", // todo(aleksvdim): try to parse from DSN
 	}
-	httpFlag := &cli.StringFlag{
-		Name:  "http",
-		Value: "127.0.0.1:3939",
+	httpFlag := &cli.IntFlag{
+		Name:  "port",
+		Value: 33939,
 	}
 	debugFlag := &cli.BoolFlag{
 		Name:   "debug",
 		Hidden: true,
 		Value:  false,
 	}
-	commands = append(commands, &cli.Command{
+	return &cli.Command{
 		Name:  "draw",
 		Flags: []cli.Flag{dsnFlag, httpFlag, driverFlag, debugFlag},
 		Action: func(c *cli.Context) error {
@@ -52,12 +53,11 @@ func init() {
 				errCh <- s.Run(c.Context)
 			}()
 
-			webAppUrl := fmt.Sprintf("http://%s/", httpFlag.Value)
-			if err := server.WaitStarts(webAppUrl, errCh); err != nil {
+			if err := server.WaitStarts(httpFlag.Value, errCh); err != nil {
 				return err
 			}
 
-			if err := open.Run(webAppUrl); err != nil {
+			if err := open.Run("http://127.0.0.1:" + strconv.Itoa(httpFlag.Value)); err != nil {
 				return fmt.Errorf("can't open web browser: %w", err)
 			}
 
@@ -69,5 +69,5 @@ func init() {
 				return err
 			}
 		},
-	})
+	}
 }

@@ -6,14 +6,14 @@ import (
 	"os"
 )
 
-const ClientPath = "web/dist"
+const clientPath = "web/dist"
 
 //go:embed web/dist
 var webFS embed.FS
 
 // GetEmbeddedClientFS returns binary embedded filesystem.
 func GetEmbeddedClientFS() fs.FS {
-	f, err := fs.Sub(webFS, ClientPath)
+	f, err := fs.Sub(webFS, clientPath)
 	if err != nil {
 		panic(err)
 	}
@@ -22,5 +22,5 @@ func GetEmbeddedClientFS() fs.FS {
 
 // GetClientFS returns os implementation of fs.FS. Used only for local testing.
 func GetClientFS() fs.FS {
-	return os.DirFS(ClientPath)
+	return os.DirFS(clientPath)
 }

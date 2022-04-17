@@ -10,8 +10,9 @@ import (
 	"github.com/sql-ressam/ressam/pkg/help"
 )
 
+// DBInfo fetches info about database and writes the result.
 func (a API) DBInfo(w http.ResponseWriter, r *http.Request) {
-	info, err := a.exporter.GetDBInfo(r.Context())
+	info, err := a.exporter.FetchDBInfo(r.Context())
 	if err != nil {
 		http.Error(w, "get db info: "+err.Error(), http.StatusInternalServerError)
 	}
@@ -28,6 +29,7 @@ func (a API) DBInfo(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// FakeDBInfo returns PostgreSQL fake info. Used for local testing.
 func FakeDBInfo(w http.ResponseWriter, _ *http.Request) {
 	fakeTables := []db.Table{
 		{
@@ -166,7 +168,7 @@ func FakeDBInfo(w http.ResponseWriter, _ *http.Request) {
 		},
 	}
 
-	info := pg.DBInfo{
+	info := pg.Info{
 		Schemes: []pg.Scheme{
 			{
 				Name:          "public",

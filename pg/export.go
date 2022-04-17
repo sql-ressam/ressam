@@ -11,10 +11,12 @@ import (
 	"github.com/sql-ressam/ressam/db"
 )
 
+// Exporter exports PostgreSQL state.
 type Exporter struct {
 	db *sql.DB
 }
 
+// NewExporter returns new Exporter instance.
 func NewExporter(db *sql.DB) *Exporter {
 	return &Exporter{
 		db: db,
@@ -25,7 +27,8 @@ const (
 	pgYesValue = "YES"
 )
 
-func (e *Exporter) GetDBInfo(ctx context.Context) (res DBInfo, err error) {
+// FetchDBInfo returns information about the database, including schemas, tables, relationships.
+func (e *Exporter) FetchDBInfo(ctx context.Context) (res Info, err error) {
 	res.Schemes, err = e.getSchemes(ctx)
 	if err != nil {
 		return res, fmt.Errorf("get schemes: %w", err)
