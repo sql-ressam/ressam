@@ -10,14 +10,16 @@ import (
 
 	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
-	"github.com/sql-ressam/ressam/internal/pkg/help"
+	"github.com/sql-ressam/ressam/db"
+	"github.com/sql-ressam/ressam/pkg/help"
 )
 
 var testConn *sql.DB
 
 func TestMain(m *testing.M) {
-	dsn := os.Getenv("TEST_DB_DSN")
+	dsn := os.Getenv("TEST_RESSAM_DSN_PG")
 	if dsn == "" {
 		log.Println("TEST_DB_DSN environment variable is required")
 		os.Exit(2)
@@ -54,9 +56,9 @@ func TestExporter_GetDBInfo(t *testing.T) {
 		info, err := exporter.GetDBInfo(context.Background())
 		assert.NoError(t, err)
 
-		expect := Table{
+		expect := db.Table{
 			Name: "test_default_values",
-			Columns: []Column{
+			Columns: []db.Column{
 				{
 					Name:           "id",
 					Type:           "int8",
@@ -133,6 +135,8 @@ func TestExporter_GetDBInfo(t *testing.T) {
 			},
 		}
 
+		require.Len(t, info.Schemes, 1)
+
 		for _, table := range info.Schemes[0].Tables {
 			if table.Name == "test_default_values" {
 				assert.Equal(t, expect, table)
@@ -151,48 +155,48 @@ func TestExporter_GetDBInfo(t *testing.T) {
 			public,books_users_book_id_fkey,books_users,book_id,books,id
 			public,books_users_user_id_fkey,books_users,user_id,users,id
 		*/
-		expect := map[string][]Relationship{
+		expect := map[string][]db.Relationship{
 			"public": {
 				{
 					Name: "books_authors_author_id_fkey",
-					From: ColumnInfo{
+					From: db.ColumnInfo{
 						Table:  "books_authors",
 						Column: "author_id",
 					},
-					To: ColumnInfo{
+					To: db.ColumnInfo{
 						Table:  "authors",
 						Column: "id",
 					},
 				},
 				{
 					Name: "books_authors_book_id_fkey",
-					From: ColumnInfo{
+					From: db.ColumnInfo{
 						Table:  "books_authors",
 						Column: "book_id",
 					},
-					To: ColumnInfo{
+					To: db.ColumnInfo{
 						Table:  "books",
 						Column: "id",
 					},
 				},
 				{
 					Name: "books_users_book_id_fkey",
-					From: ColumnInfo{
+					From: db.ColumnInfo{
 						Table:  "books_users",
 						Column: "book_id",
 					},
-					To: ColumnInfo{
+					To: db.ColumnInfo{
 						Table:  "books",
 						Column: "id",
 					},
 				},
 				{
 					Name: "books_users_user_id_fkey",
-					From: ColumnInfo{
+					From: db.ColumnInfo{
 						Table:  "books_users",
 						Column: "user_id",
 					},
-					To: ColumnInfo{
+					To: db.ColumnInfo{
 						Table:  "users",
 						Column: "id",
 					},
