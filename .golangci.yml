@@ -35,7 +35,6 @@ linters:
     - dogsled
     - dupl
     - errcheck
-    - gochecknoinits
     - goconst
     - gocritic
     - gofmt
@@ -70,10 +69,6 @@ issues:
     # Exclude go:generate from lll
     - source: "//go:generate"
       linters: [ lll ]
-
-    - path: ressam\.go
-      linters:
-        - gochecknoinits
 
     # Disable linters that are annoying in tests.
     - path: _test\.go
