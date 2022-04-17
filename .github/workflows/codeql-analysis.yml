@@ -32,8 +32,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'go' ]
-        # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
+        language: [ 'go', 'typescript', 'javascript' ]
         # Learn more about CodeQL language support at https://git.io/codeql-language-support
 
     steps:
