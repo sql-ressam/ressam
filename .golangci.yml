@@ -1,0 +1,89 @@
+linters-settings:
+  govet:
+    check-shadowing: true
+  gocyclo:
+    min-complexity: 15
+  maligned:
+    suggest-new: true
+  dupl:
+    threshold: 120
+  goconst:
+    min-len: 2
+    min-occurrences: 3
+  misspell:
+    locale: US
+  lll:
+    line-length: 140
+  goimports:
+    local-prefixes: github.com/sql-ressam/
+# does not support go 1.18
+#  gocritic:
+#    enabled-tags:
+#      - diagnostic
+#      - experimental
+#      - opinionated
+#      - performance
+#      - style
+#    disabled-checks:
+#      - whyNoLint
+
+linters:
+  disable-all: true
+  enable:
+    - deadcode
+    - depguard
+    - dogsled
+    - dupl
+    - errcheck
+    - gochecknoinits
+    - goconst
+    - gocritic
+    - gofmt
+    - goimports
+    - revive
+    - gosec
+    - govet
+    - ineffassign
+    - lll
+    - misspell
+    - nakedret
+    - typecheck
+    - unconvert
+    - varcheck
+    - whitespace
+
+# wait go 1.18 support
+#    - gosimple
+#    - staticcheck
+#    - structcheck
+#    - stylecheck
+#    - unparam
+#    - unused
+
+issues:
+  exclude-use-default: false
+  exclude-rules:
+    - path: exchange
+      linters: [ gocyclo, gocognit ]
+      text: "Run"
+
+    # Exclude go:generate from lll
+    - source: "//go:generate"
+      linters: [ lll ]
+
+    - path: ressam\.go
+      linters:
+        - gochecknoinits
+
+    # Disable linters that are annoying in tests.
+    - path: _test\.go
+      linters:
+        - gocyclo
+        - errcheck
+        - dupl
+        - gosec
+        - funlen
+        - goconst
+        - gocognit
+        - scopelint
+        - lll

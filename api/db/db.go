@@ -6,14 +6,17 @@ import (
 	"github.com/sql-ressam/ressam/pg"
 )
 
+// PgExporter can get information about PostgreSQL schemas.
 type PgExporter interface {
-	GetDBInfo(ctx context.Context) (res pg.DBInfo, err error)
+	FetchDBInfo(ctx context.Context) (res pg.Info, err error)
 }
 
+// API handles database information requests.
 type API struct {
 	exporter PgExporter
 }
 
+// NewAPI returns new API instance.
 func NewAPI(exporter PgExporter) API {
 	return API{
 		exporter,
