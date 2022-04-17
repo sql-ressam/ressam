@@ -2,7 +2,7 @@
 
 Ressam (Turkish meaning artist) - is lightweight CLI database diagram explorer 
 with relationships prediction (a.k.a. virtual foreign key).
-Ressam can show database diagrams in the self-hosted Web app, YAML or JSON.
+Ressam can show database diagrams in the self-hosted Web app.
 No telemetry, external calls, fully open.
 
 Example usage:
@@ -18,7 +18,7 @@ TODO:
 * MySQL support
 * MSSQL support
 * Mongo support?
-* Export to JSON, YAML
+* Export to JSON, YAML, UML, XML
 * Relationship prediction
 
 # Contribute
