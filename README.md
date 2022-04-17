@@ -1,9 +1,9 @@
 # Ressam [WIP]
 
 Ressam (Turkish meaning artist) - is lightweight CLI database diagram explorer 
-with relationships prediction (e.g. if you don't have them for performance reasons).
+with relationships prediction (a.k.a. virtual foreign key).
 Ressam can show database diagrams in the self-hosted Web app, YAML or JSON.
-No telemetry and external calls and fully open.
+No telemetry, external calls, fully open.
 
 Example usage:
 
@@ -20,3 +20,30 @@ TODO:
 * Mongo support?
 * Export to JSON, YAML
 * Relationship prediction
+
+# Contribute
+
+## run unit tests
+
+```bash
+go test -run=. ./... 
+```
+
+## run integration tests
+
+1. run test migrations
+```bash
+goose -dir=pg/testdata/migrations postgres "postgresql://postgres:postgres@localhost:5432/ressam?sslmode=disable" up
+```
+
+or
+
+```bash
+docker compose up -d
+```
+
+2. Run integration tests
+```
+export TEST_RESSAM_DSN_PG="postgresql://postgres:postgres@localhost:5432/ressam?sslmode=disable"
+go test -tags integration -run=. ./... 
+```
