@@ -3,12 +3,11 @@ package server
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 )
 
 // WaitStarts until the server can start accepting connections.
-func WaitStarts(port int, stopCh <-chan error) error {
+func WaitStarts(port string, stopCh <-chan error) error {
 	const retryAttempts = 10
 
 	// wait until the server can start accepting connections
@@ -17,7 +16,7 @@ func WaitStarts(port int, stopCh <-chan error) error {
 		case err := <-stopCh:
 			return err
 		default:
-			_, err := http.Get("http://127.0.0.1:" + strconv.Itoa(port))
+			_, err := http.Get("http://127.0.0.1:" + port)
 			if err == nil {
 				return nil
 			}

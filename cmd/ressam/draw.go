@@ -16,15 +16,15 @@ func drawCommand() *cli.Command {
 	dsnFlag := &cli.StringFlag{
 		Name:     "dsn",
 		EnvVars:  []string{"RESSAM_DSN"},
-		Required: true,
+		Required: false,
 	}
 	driverFlag := &cli.StringFlag{
 		Name:     "driver",
 		EnvVars:  []string{"RESSAM_DRIVER"},
-		Required: true,
+		Required: false,
 		Value:    "", // todo(aleksvdim): try to parse from DSN
 	}
-	httpFlag := &cli.IntFlag{
+	portFlag := &cli.IntFlag{
 		Name:  "port",
 		Value: 33939,
 	}
@@ -35,10 +35,12 @@ func drawCommand() *cli.Command {
 	}
 	return &cli.Command{
 		Name:  "draw",
-		Flags: []cli.Flag{dsnFlag, httpFlag, driverFlag, debugFlag},
+		Flags: []cli.Flag{dsnFlag, portFlag, driverFlag, debugFlag},
 		Action: func(c *cli.Context) error {
+			port := strconv.Itoa(c.Int(portFlag.Name))
+
 			s := server.New(c.Context, &server.Settings{
-				Addr:  c.String(httpFlag.Name),
+				Addr:  "127.0.0.1:" + port,
 				Debug: c.Bool(debugFlag.Name),
 			})
 
@@ -53,11 +55,11 @@ func drawCommand() *cli.Command {
 				errCh <- s.Run(c.Context)
 			}()
 
-			if err := server.WaitStarts(httpFlag.Value, errCh); err != nil {
+			if err := server.WaitStarts(port, errCh); err != nil {
 				return err
 			}
 
-			if err := open.Run("http://127.0.0.1:" + strconv.Itoa(httpFlag.Value)); err != nil {
+			if err := open.Run("http://127.0.0.1:" + port); err != nil {
 				return fmt.Errorf("can't open web browser: %w", err)
 			}
 
