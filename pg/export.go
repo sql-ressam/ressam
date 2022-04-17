@@ -7,6 +7,8 @@ import (
 	"sort"
 
 	"github.com/lib/pq"
+
+	"github.com/sql-ressam/ressam/db"
 )
 
 type Exporter struct {
@@ -73,12 +75,12 @@ func (e *Exporter) getSchemes(ctx context.Context) (res []Scheme, err error) {
 		}
 	}(rows)
 
-	columnByTableByScheme := map[string]map[string][]Column{}
+	columnByTableByScheme := map[string]map[string][]db.Column{}
 
 	for rows.Next() {
 		var (
 			scheme, table, nullable string
-			col                     Column
+			col                     db.Column
 		)
 
 		err = rows.Scan(
@@ -94,19 +96,19 @@ func (e *Exporter) getSchemes(ctx context.Context) (res []Scheme, err error) {
 		col.Nullable = nullable == pgYesValue
 
 		if columnByTableByScheme[scheme] == nil {
-			columnByTableByScheme[scheme] = map[string][]Column{}
+			columnByTableByScheme[scheme] = map[string][]db.Column{}
 		}
 
 		columnByTableByScheme[scheme][table] = append(columnByTableByScheme[scheme][table], col)
 	}
 
 	for schemeName, tableNames := range columnByTableByScheme {
-		var tables []Table
+		var tables []db.Table
 
 		for tableName, columns := range tableNames {
-			sort.Sort(ByColumnPosition(columns))
+			sort.Sort(db.ByColumnPosition(columns))
 
-			tables = append(tables, Table{
+			tables = append(tables, db.Table{
 				Name:    tableName,
 				Columns: columns,
 			})
@@ -121,7 +123,7 @@ func (e *Exporter) getSchemes(ctx context.Context) (res []Scheme, err error) {
 	return res, err
 }
 
-func (e *Exporter) getTablesRelationships(ctx context.Context, schemes []string) (map[string][]Relationship, error) {
+func (e *Exporter) getTablesRelationships(ctx context.Context, schemes []string) (map[string][]db.Relationship, error) {
 	rows, err := e.db.QueryContext(ctx, `
 		SELECT tc.table_schema, tc.constraint_name, tc.table_name, kcu.column_name,
 			ccu.table_name AS foreign_table_name,
@@ -138,11 +140,11 @@ func (e *Exporter) getTablesRelationships(ctx context.Context, schemes []string)
 		return nil, fmt.Errorf("get tables relationships query: %w", err)
 	}
 
-	res := make(map[string][]Relationship, len(schemes))
+	res := make(map[string][]db.Relationship, len(schemes))
 
 	for rows.Next() {
 		var (
-			rel    Relationship
+			rel    db.Relationship
 			scheme string
 		)
 
