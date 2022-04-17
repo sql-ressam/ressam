@@ -1,6 +1,6 @@
 # Ressam [WIP]
 
-Ressam (Turkish meaning artist) - is lightweight CLI database diagram explorer 
+Ressam (Turkish meaning artist) - is lightweight database diagram explorer 
 with relationships prediction (a.k.a. virtual foreign key).
 Ressam can show database diagrams in the self-hosted Web app.
 No telemetry, external calls, fully open.
