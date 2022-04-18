@@ -8,7 +8,7 @@ import (
 
 	"github.com/lib/pq"
 
-	"github.com/sql-ressam/ressam/db"
+	"github.com/sql-ressam/ressam/database"
 )
 
 // Exporter exports PostgreSQL state.
@@ -78,12 +78,12 @@ func (e *Exporter) getSchemes(ctx context.Context) (res []Scheme, err error) {
 		}
 	}(rows)
 
-	columnByTableByScheme := map[string]map[string][]db.Column{}
+	columnByTableByScheme := map[string]map[string][]database.Column{}
 
 	for rows.Next() {
 		var (
 			scheme, table, nullable string
-			col                     db.Column
+			col                     database.Column
 		)
 
 		err = rows.Scan(
@@ -99,19 +99,19 @@ func (e *Exporter) getSchemes(ctx context.Context) (res []Scheme, err error) {
 		col.Nullable = nullable == pgYesValue
 
 		if columnByTableByScheme[scheme] == nil {
-			columnByTableByScheme[scheme] = map[string][]db.Column{}
+			columnByTableByScheme[scheme] = map[string][]database.Column{}
 		}
 
 		columnByTableByScheme[scheme][table] = append(columnByTableByScheme[scheme][table], col)
 	}
 
 	for schemeName, tableNames := range columnByTableByScheme {
-		var tables []db.Table
+		var tables []database.Table
 
 		for tableName, columns := range tableNames {
-			sort.Sort(db.ByColumnPosition(columns))
+			sort.Sort(database.ByColumnPosition(columns))
 
-			tables = append(tables, db.Table{
+			tables = append(tables, database.Table{
 				Name:    tableName,
 				Columns: columns,
 			})
@@ -126,7 +126,7 @@ func (e *Exporter) getSchemes(ctx context.Context) (res []Scheme, err error) {
 	return res, err
 }
 
-func (e *Exporter) getTablesRelationships(ctx context.Context, schemes []string) (map[string][]db.Relationship, error) {
+func (e *Exporter) getTablesRelationships(ctx context.Context, schemes []string) (map[string][]database.Relationship, error) {
 	rows, err := e.db.QueryContext(ctx, `
 		SELECT tc.table_schema, tc.constraint_name, tc.table_name, kcu.column_name,
 			ccu.table_name AS foreign_table_name,
@@ -143,11 +143,11 @@ func (e *Exporter) getTablesRelationships(ctx context.Context, schemes []string)
 		return nil, fmt.Errorf("get tables relationships query: %w", err)
 	}
 
-	res := make(map[string][]db.Relationship, len(schemes))
+	res := make(map[string][]database.Relationship, len(schemes))
 
 	for rows.Next() {
 		var (
-			rel    db.Relationship
+			rel    database.Relationship
 			scheme string
 		)
 

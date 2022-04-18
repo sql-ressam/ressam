@@ -3,7 +3,7 @@ package db
 import (
 	"context"
 
-	"github.com/sql-ressam/ressam/pg"
+	"github.com/sql-ressam/ressam/database/pg"
 )
 
 // PgExporter can get information about PostgreSQL schemas.

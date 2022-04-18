@@ -1,4 +1,4 @@
-package db
+package database
 
 // Tables slice of Table.
 type Tables []Table

@@ -1,4 +1,4 @@
-package db
+package database
 
 // Table is a database table.
 type Table struct {
@@ -6,7 +6,7 @@ type Table struct {
 	Columns []Column `json:"columns"`
 }
 
-// Column is a database db.
+// Column is a database column.
 type Column struct {
 	Name           string `json:"name"`
 	Type           string `json:"type"`
@@ -17,7 +17,7 @@ type Column struct {
 	Precision    *int    `json:"precision"`
 }
 
-// ColumnInfo is the minimum information about the db.
+// ColumnInfo is the minimum information about the database.
 type ColumnInfo struct {
 	Table     string `json:"table"`
 	Column    string `json:"column"`
