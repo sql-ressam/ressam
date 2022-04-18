@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/sql-ressam/ressam/db"
-	"github.com/sql-ressam/ressam/pg"
+	"github.com/sql-ressam/ressam/database"
+	"github.com/sql-ressam/ressam/database/pg"
 	"github.com/sql-ressam/ressam/pkg/help"
 )
 
@@ -14,7 +14,7 @@ import (
 func (a API) DBInfo(w http.ResponseWriter, r *http.Request) {
 	info, err := a.exporter.FetchDBInfo(r.Context())
 	if err != nil {
-		http.Error(w, "get db info: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "get database info: "+err.Error(), http.StatusInternalServerError)
 	}
 
 	res, err := json.Marshal(info)
@@ -31,10 +31,10 @@ func (a API) DBInfo(w http.ResponseWriter, r *http.Request) {
 
 // FakeDBInfo returns PostgreSQL fake info. Used for local testing.
 func FakeDBInfo(w http.ResponseWriter, _ *http.Request) {
-	fakeTables := []db.Table{
+	fakeTables := []database.Table{
 		{
 			Name: "books_users",
-			Columns: []db.Column{
+			Columns: []database.Column{
 				{
 					Name:      "user_id",
 					Type:      "int8",
@@ -55,7 +55,7 @@ func FakeDBInfo(w http.ResponseWriter, _ *http.Request) {
 		},
 		{
 			Name: "books_authors",
-			Columns: []db.Column{
+			Columns: []database.Column{
 				{
 					Name:      "author_id",
 					Type:      "int8",
@@ -70,7 +70,7 @@ func FakeDBInfo(w http.ResponseWriter, _ *http.Request) {
 		},
 		{
 			Name: "users",
-			Columns: []db.Column{
+			Columns: []database.Column{
 				{
 					Name:         "id",
 					Type:         "int8",
@@ -87,7 +87,7 @@ func FakeDBInfo(w http.ResponseWriter, _ *http.Request) {
 		},
 		{
 			Name: "books",
-			Columns: []db.Column{
+			Columns: []database.Column{
 				{
 					Name:         "id",
 					Type:         "int8",
@@ -104,7 +104,7 @@ func FakeDBInfo(w http.ResponseWriter, _ *http.Request) {
 		},
 		{
 			Name: "authors",
-			Columns: []db.Column{
+			Columns: []database.Column{
 				{
 					Name:         "id",
 					Type:         "int8",
@@ -121,47 +121,47 @@ func FakeDBInfo(w http.ResponseWriter, _ *http.Request) {
 		},
 	}
 
-	rels := []db.Relationship{
+	rels := []database.Relationship{
 		{
 			Name: "books_authors_author_id_fkey",
-			From: db.ColumnInfo{
+			From: database.ColumnInfo{
 				Table:  "books_authors",
 				Column: "author_id",
 			},
-			To: db.ColumnInfo{
+			To: database.ColumnInfo{
 				Table:  "authors",
 				Column: "id",
 			},
 		},
 		{
 			Name: "books_authors_book_id_fkey",
-			From: db.ColumnInfo{
+			From: database.ColumnInfo{
 				Table:  "books_authors",
 				Column: "book_id",
 			},
-			To: db.ColumnInfo{
+			To: database.ColumnInfo{
 				Table:  "books",
 				Column: "id",
 			},
 		},
 		{
 			Name: "books_users_book_id_fkey",
-			From: db.ColumnInfo{
+			From: database.ColumnInfo{
 				Table:  "books_users",
 				Column: "book_id",
 			},
-			To: db.ColumnInfo{
+			To: database.ColumnInfo{
 				Table:  "books",
 				Column: "id",
 			},
 		},
 		{
 			Name: "books_users_user_id_fkey",
-			From: db.ColumnInfo{
+			From: database.ColumnInfo{
 				Table:  "books_users",
 				Column: "user_id",
 			},
-			To: db.ColumnInfo{
+			To: database.ColumnInfo{
 				Table:  "users",
 				Column: "id",
 			},

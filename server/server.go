@@ -14,7 +14,7 @@ import (
 
 	"github.com/sql-ressam/ressam"
 	"github.com/sql-ressam/ressam/api/db"
-	"github.com/sql-ressam/ressam/pg"
+	"github.com/sql-ressam/ressam/database/pg"
 )
 
 // Settings contains server options.

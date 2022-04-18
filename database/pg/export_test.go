@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sql-ressam/ressam/db"
+	"github.com/sql-ressam/ressam/database"
 	"github.com/sql-ressam/ressam/pkg/help"
 )
 
@@ -58,9 +58,9 @@ func TestExporter_GetDBInfo(t *testing.T) {
 		info, err := exporter.FetchDBInfo(context.Background())
 		assert.NoError(t, err)
 
-		expect := db.Table{
+		expect := database.Table{
 			Name: "test_default_values",
-			Columns: []db.Column{
+			Columns: []database.Column{
 				{
 					Name:           "id",
 					Type:           "int8",
@@ -157,48 +157,48 @@ func TestExporter_GetDBInfo(t *testing.T) {
 			public,books_users_book_id_fkey,books_users,book_id,books,id
 			public,books_users_user_id_fkey,books_users,user_id,users,id
 		*/
-		expect := map[string][]db.Relationship{
+		expect := map[string][]database.Relationship{
 			"public": {
 				{
 					Name: "books_authors_author_id_fkey",
-					From: db.ColumnInfo{
+					From: database.ColumnInfo{
 						Table:  "books_authors",
 						Column: "author_id",
 					},
-					To: db.ColumnInfo{
+					To: database.ColumnInfo{
 						Table:  "authors",
 						Column: "id",
 					},
 				},
 				{
 					Name: "books_authors_book_id_fkey",
-					From: db.ColumnInfo{
+					From: database.ColumnInfo{
 						Table:  "books_authors",
 						Column: "book_id",
 					},
-					To: db.ColumnInfo{
+					To: database.ColumnInfo{
 						Table:  "books",
 						Column: "id",
 					},
 				},
 				{
 					Name: "books_users_book_id_fkey",
-					From: db.ColumnInfo{
+					From: database.ColumnInfo{
 						Table:  "books_users",
 						Column: "book_id",
 					},
-					To: db.ColumnInfo{
+					To: database.ColumnInfo{
 						Table:  "books",
 						Column: "id",
 					},
 				},
 				{
 					Name: "books_users_user_id_fkey",
-					From: db.ColumnInfo{
+					From: database.ColumnInfo{
 						Table:  "books_users",
 						Column: "user_id",
 					},
-					To: db.ColumnInfo{
+					To: database.ColumnInfo{
 						Table:  "users",
 						Column: "id",
 					},
