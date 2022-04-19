@@ -83,7 +83,7 @@ func (s *Server) InitAPI(ctx context.Context, driver, dsn string) error {
 	return nil
 }
 
-// InitClient inits embedded web client.
+// InitClient inits embedded ui client.
 func (s *Server) InitClient() {
 	s.mux.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)

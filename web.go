@@ -6,9 +6,9 @@ import (
 	"os"
 )
 
-const clientPath = "web/dist"
+const clientPath = "ui/dist"
 
-//go:embed web/dist
+//go:embed ui/dist
 var webFS embed.FS
 
 // GetEmbeddedClientFS returns binary embedded filesystem.
