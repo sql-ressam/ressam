@@ -1,6 +1,6 @@
 run:
   skip-dirs:
-    - web
+    - ui
 
 linters-settings:
   govet:
