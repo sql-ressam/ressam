@@ -108,8 +108,20 @@ func TestExporter_GetDBInfo(t *testing.T) {
 
 	testCases := []TestCase{
 		{
-			Name:  "postgres_v14",
+			Name:  "postgres_v11",
+			PgTag: "11",
+		},
+		{
+			Name:  "postgres_v12",
+			PgTag: "12",
+		},
+		{
+			Name:  "postgres_v13",
 			PgTag: "13",
+		},
+		{
+			Name:  "postgres_v14",
+			PgTag: "14",
 		},
 	}
 
@@ -240,22 +252,26 @@ func preparePg(tag string) (db *sql.DB, _ func(), err error) {
 
 	netwrk, err := pool.CreateNetwork("ressam-network")
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("can't create network: %w", err)
 	}
 
 	pgResource, err := newPostgresResource(pool, tag, netwrk)
 	if err != nil {
+		_ = netwrk.Close()
 		return nil, nil, err
 	}
 
-	release := func() {
+	purge := func() {
 		if err := pool.Purge(pgResource); err != nil {
 			log.Println("can't purge pg:", err.Error())
+		}
+		if err := netwrk.Close(); err != nil {
+			log.Println("can't close the network:", err.Error())
 		}
 	}
 	defer func() {
 		if err != nil {
-			release()
+			purge()
 		}
 	}()
 
@@ -279,7 +295,7 @@ func preparePg(tag string) (db *sql.DB, _ func(), err error) {
 		}
 	}
 
-	return db, release, nil
+	return db, purge, nil
 }
 
 func newDB(pool *dockertest.Pool, dsn string) (*sql.DB, error) {
@@ -304,7 +320,8 @@ func newDB(pool *dockertest.Pool, dsn string) (*sql.DB, error) {
 }
 
 func newPostgresResource(pool *dockertest.Pool, tag string, netwrk *dockertest.Network) (*dockertest.Resource, error) {
-	env := []string{"POSTGRES_PASSWORD=" + password, "POSTGRES_USER=" + user, "POSTGRES_DB=" + dbName}
+	env := []string{"POSTGRES_PASSWORD=" + password, "POSTGRES_USER=" + user, "POSTGRES_DB=" + dbName,
+		"POSTGRES_INITDB_ARGS=--auth-host=md5"}
 	// pulls an image, creates a container based on it and runs it
 	resource, err := pool.RunWithOptions(&dockertest.RunOptions{
 		Repository: repository,
@@ -312,7 +329,7 @@ func newPostgresResource(pool *dockertest.Pool, tag string, netwrk *dockertest.N
 		Tag:        tag,
 		Networks:   []*dockertest.Network{netwrk},
 	}, func(config *docker.HostConfig) {
-		//config.AutoRemove = true
+		config.AutoRemove = true
 	})
 	if err != nil {
 		return nil, fmt.Errorf("could not start resource: %w", err)
@@ -327,7 +344,7 @@ func newGooseResource(pool *dockertest.Pool, dsn string) (*dockertest.Resource, 
 			dsn, "up"},
 		//Networks: []*dockertest.Network{netwrk},
 	}, func(config *docker.HostConfig) {
-		//config.AutoRemove = true
+		config.AutoRemove = true
 		config.Mounts = []docker.HostMount{
 			{
 				Target:   "/app/migrations",
