@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"path"
 	"testing"
 	"time"
 
@@ -108,7 +109,7 @@ func TestExporter_GetDBInfo(t *testing.T) {
 	testCases := []TestCase{
 		{
 			Name:  "postgres_v14",
-			PgTag: "14",
+			PgTag: "13",
 		},
 	}
 
@@ -121,11 +122,13 @@ func TestExporter_GetDBInfo(t *testing.T) {
 		exporter := NewExporter(db)
 
 		t.Run(tc.Name, func(t *testing.T) {
+			defer release()
+
 			ctx, stop := context.WithTimeout(context.Background(), time.Minute)
 			info, err := exporter.FetchDBInfo(ctx)
 			stop()
 			require.NoError(t, err)
-			assert.Len(t, info.Schemes, 1)
+			require.Len(t, info.Schemes, 1)
 
 			for _, table := range info.Schemes[0].Tables {
 				if table.Name == "test_default_values" {
@@ -134,10 +137,6 @@ func TestExporter_GetDBInfo(t *testing.T) {
 				}
 			}
 		})
-
-		if err = release(); err != nil {
-			panic(err)
-		}
 	}
 
 	//exporter := NewExporter(testConn)
@@ -221,58 +220,122 @@ func TestExporter_GetDBInfo(t *testing.T) {
 	//})
 }
 
-func preparePg(tag string) (db *sql.DB, release func() error, err error) {
+const (
+	repository = "postgres"
+	user       = "postgres"
+	password   = "postgres"
+	host       = "localhost"
+	driver     = "postgres"
+	dbName     = "ressam"
+
+	dockerEndpoint = "" // "" to use the default
+)
+
+func preparePg(tag string) (db *sql.DB, _ func(), err error) {
 	// uses a sensible default on windows (tcp/http) and linux/osx (socket)
-	pool, err := dockertest.NewPool("")
+	pool, err := dockertest.NewPool(dockerEndpoint)
 	if err != nil {
 		return nil, nil, fmt.Errorf("could not create a pool: %w", err)
 	}
 
-	const (
-		repository = "postgres"
-		user       = "postgres"
-		password   = "postgres"
-		host       = "localhost"
-		driver     = "postgres"
-		dbName     = "ressam"
-	)
-	env := []string{"POSTGRES_PASSWORD=" + password, "POSTGRES_USER=" + user, "POSTGRES_DB=" + dbName}
-	// pulls an image, creates a container based on it and runs it
-	resource, err := pool.RunWithOptions(&dockertest.RunOptions{
-		Repository: repository,
-		Env:        env,
-		Tag:        tag,
-	}, func(config *docker.HostConfig) {
-		config.AutoRemove = true
-		config.RestartPolicy = docker.RestartPolicy{
-			Name: "no",
-		}
-	})
+	netwrk, err := pool.CreateNetwork("ressam-network")
 	if err != nil {
-		return nil, nil, fmt.Errorf("could not start resource: %w", err)
+		return nil, nil, err
 	}
 
-	release = func() error {
-		return pool.Purge(resource)
+	pgResource, err := newPostgresResource(pool, tag, netwrk)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	dsn := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=disable", password, user, host,
-		resource.GetPort("5432/tcp"), dbName)
+	release := func() {
+		if err := pool.Purge(pgResource); err != nil {
+			log.Println("can't purge pg:", err.Error())
+		}
+	}
+	defer func() {
+		if err != nil {
+			release()
+		}
+	}()
 
+	db, err = newDB(pool, fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=disable", password, user, host,
+		pgResource.GetPort("5432/tcp"), dbName))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var gooseResource *dockertest.Resource
+	gooseResource, err = newGooseResource(pool, fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=disable",
+		password, user, host,
+		pgResource.GetPort("5432/tcp"), dbName))
+	if err != nil {
+		return nil, nil, fmt.Errorf("can't create goose resouce: %w", err)
+	}
+
+	for i := 0; i < 5; i++ {
+		if gooseResource.Container.State.Running {
+			time.Sleep(time.Millisecond * 200)
+		}
+	}
+
+	return db, release, nil
+}
+
+func newDB(pool *dockertest.Pool, dsn string) (*sql.DB, error) {
 	// exponential backoff-retry, because the application in the container might not be ready to accept connections yet
-	if err = pool.Retry(func() error {
+	var (
+		db  *sql.DB
+		err error
+	)
+	err = pool.Retry(func() error {
 		db, err = sql.Open(driver, dsn)
 		if err != nil {
 			log.Println("can't open sql connection:", err.Error())
 			return err
 		}
 		return db.Ping()
-	}); err != nil {
-		if errRelease := release(); errRelease != nil {
-			log.Println("can't remove container:", errRelease.Error())
-		}
-		return nil, nil, fmt.Errorf("can't open connection: %w", err)
+	})
+	if err != nil {
+		return nil, fmt.Errorf("can't open connection: %w", err)
 	}
 
-	return db, release, nil
+	return db, nil
+}
+
+func newPostgresResource(pool *dockertest.Pool, tag string, netwrk *dockertest.Network) (*dockertest.Resource, error) {
+	env := []string{"POSTGRES_PASSWORD=" + password, "POSTGRES_USER=" + user, "POSTGRES_DB=" + dbName}
+	// pulls an image, creates a container based on it and runs it
+	resource, err := pool.RunWithOptions(&dockertest.RunOptions{
+		Repository: repository,
+		Env:        env,
+		Tag:        tag,
+		Networks:   []*dockertest.Network{netwrk},
+	}, func(config *docker.HostConfig) {
+		//config.AutoRemove = true
+	})
+	if err != nil {
+		return nil, fmt.Errorf("could not start resource: %w", err)
+	}
+
+	return resource, nil
+}
+func newGooseResource(pool *dockertest.Pool, dsn string) (*dockertest.Resource, error) {
+	return pool.RunWithOptions(&dockertest.RunOptions{
+		Repository: "gomicro/goose",
+		Entrypoint: []string{"goose", "-dir=/app/migrations", "postgres",
+			dsn, "up"},
+		//Networks: []*dockertest.Network{netwrk},
+	}, func(config *docker.HostConfig) {
+		//config.AutoRemove = true
+		config.Mounts = []docker.HostMount{
+			{
+				Target:   "/app/migrations",
+				Source:   path.Base("database/pg/testdata/migrations"),
+				Type:     "volume",
+				ReadOnly: true,
+			},
+		}
+		config.NetworkMode = "host"
+	})
 }
