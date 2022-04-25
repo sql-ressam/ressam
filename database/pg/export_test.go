@@ -64,7 +64,6 @@ var expect = database.Table{
 			DefaultValue:   help.Ref[string]("1"),
 			Precision:      help.Ref[int](32),
 		},
-
 		{
 			Name:           "test_enum_null",
 			Type:           "test_enum",
@@ -107,6 +106,14 @@ func TestExporter_GetDBInfo(t *testing.T) {
 	}
 
 	testCases := []TestCase{
+		{
+			Name:  "postgres_v9",
+			PgTag: "9",
+		},
+		{
+			Name:  "postgres_v10",
+			PgTag: "10",
+		},
 		{
 			Name:  "postgres_v11",
 			PgTag: "11",
