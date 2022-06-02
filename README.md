@@ -23,7 +23,7 @@ TODO:
 
 # Contribute
 
-## run unit tests
+## Run unit tests
 
 ```bash
 go test -run=. ./... 
@@ -31,7 +31,7 @@ go test -run=. ./...
 
 ## run integration tests
 
-1. run test migrations
+1. Run test migrations
 ```bash
 goose -dir=pg/testdata/migrations postgres "postgresql://postgres:postgres@localhost:5432/ressam?sslmode=disable" up
 ```
